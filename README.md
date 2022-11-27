@@ -1,0 +1,1 @@
+## Sentiment classification using Hugging Face transformers with Amazon SageMaker, AWS Lambda and AWS API Gateway
