@@ -1,18 +1,24 @@
-from transformers import AutoModelForSequenceClassification, Trainer, TrainingArguments, AutoTokenizer
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
-from datasets import load_from_disk
-import random
-import logging
-import sys
 import argparse
+import logging
 import os
+import random
+import sys
 import torch
+
+from datasets import load_from_disk
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_recall_fscore_support
+from transformers import AutoModelForSequenceClassification
+from transformers import AutoTokenizer
+from transformers import Trainer
+from transformers import TrainingArguments 
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    # Hyperparameters sent by the client are passed as command-line arguments to the script
+    # Hyperparameters sent by the user are passed as command-line arguments to the script
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--eval_batch_size", type=int, default=64)
@@ -21,12 +27,12 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=str, default=5e-5)
 
     # Data, model, and output directories
-    parser.add_argument("--output_data_dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
     parser.add_argument("--model_dir", type=str, default=os.environ["SM_MODEL_DIR"])
     parser.add_argument("--n_gpus", type=str, default=os.environ["SM_NUM_GPUS"])
     parser.add_argument("--training_dir", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
     parser.add_argument("--test_dir", type=str, default=os.environ["SM_CHANNEL_TEST"])
-
+    parser.add_argument("--output_data_dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
+    
     args, _ = parser.parse_known_args()
 
     # Set up logging
@@ -67,6 +73,7 @@ if __name__ == "__main__":
         evaluation_strategy="epoch",
         logging_dir=f"{args.output_data_dir}/logs",
         learning_rate=float(args.learning_rate),
+        save_total_limit=1,
     )
 
     # Create Trainer instance
@@ -85,7 +92,7 @@ if __name__ == "__main__":
     # Evaluate model
     eval_result = trainer.evaluate(eval_dataset=test_dataset)
 
-    # Write eval result to file which can be accessed later in S3 ouput
+    # Write eval result to file which can be accessed later in S3 output
     with open(os.path.join(args.output_data_dir, "eval_results.txt"), "w") as writer:
         print(f"***** Eval results *****")
         for key, value in sorted(eval_result.items()):
